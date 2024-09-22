@@ -6,7 +6,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
-#include "InputMappingContext.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -40,7 +39,7 @@ void ASCharacter::BeginPlay()
 
 void ASCharacter::Move(const FInputActionValue& Value)
 {
-	// Input is a 2D Vector
+	// Input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	
 	if (GetController())
@@ -64,7 +63,7 @@ void ASCharacter::Move(const FInputActionValue& Value)
 
 void ASCharacter::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
+	// Input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
 
 	if (GetController())
@@ -73,6 +72,17 @@ void ASCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void ASCharacter::ShootProjectile()
+{
+	FVector SpawnLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	FRotator SpawnRotation = GetController()->GetControlRotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams); 
 }
 
 // Called every frame
@@ -109,6 +119,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 		// Look
 		EnhancedInputComponent->BindAction(LookInputAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
+
+		// Attack
+		EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Triggered, this, &ASCharacter::ShootProjectile);
 	}
 }
 
