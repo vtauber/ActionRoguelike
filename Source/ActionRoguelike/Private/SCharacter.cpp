@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
+#include "SInteractionComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -24,6 +25,8 @@ ASCharacter::ASCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	InteractionComp = CreateDefaultSubobject<USInteractionComponent>("InteractionComponent");
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -76,6 +79,13 @@ void ASCharacter::Look(const FInputActionValue& Value)
 
 void ASCharacter::ShootProjectile()
 {
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::ShootProjectile_TimeElapsed, AttackDelay);
+}
+
+void ASCharacter::ShootProjectile_TimeElapsed()
+{
 	FVector SpawnLocation = GetMesh()->GetSocketLocation("Muzzle_01");
 	FRotator SpawnRotation = GetController()->GetControlRotation();
 
@@ -83,6 +93,11 @@ void ASCharacter::ShootProjectile()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, SpawnParams); 
+}
+
+void ASCharacter::Interact()
+{
+	InteractionComp->PrimaryInteract();
 }
 
 // Called every frame
@@ -122,6 +137,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 		// Attack
 		EnhancedInputComponent->BindAction(ShootInputAction, ETriggerEvent::Triggered, this, &ASCharacter::ShootProjectile);
+
+		// Interact
+		EnhancedInputComponent->BindAction(InteractInputAction, ETriggerEvent::Triggered, this, &ASCharacter::Interact);
 	}
 }
 
